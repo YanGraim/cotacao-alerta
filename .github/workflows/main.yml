@@ -39,6 +39,14 @@ jobs:
             echo "Cotação anterior: $anterior ARS/BRL"
             echo "Variação: $variacao%"
 
+            if awk -v variacao="$variacao" 'BEGIN { exit !(variacao >= 2) }'; then
+              echo "🚨 A cotação SUBIU 2% ou mais!"
+            elif awk -v variacao="$variacao" 'BEGIN { exit !(variacao <= -2) }'; then
+              echo "🚨 A cotação CAIU 2% ou mais!"
+            else
+              echo "A cotação não variou 2%."
+            fi
+
           else
             echo "Primeira execução. Ainda não existe cotação anterior."
           fi
