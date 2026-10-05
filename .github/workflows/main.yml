@@ -18,5 +18,6 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"from":"BRL","to":"ARS"}')
 
-          echo "Resposta da AstroPay:"
-          echo "$resposta"
+          cotacao=$(echo "$resposta" | jq -r '.exchange')
+
+          echo "Cotação atual: $cotacao ARS/BRL"
