@@ -33,6 +33,7 @@ jobs:
           mkdir -p data
 
           if [ -f data/ultima-cotacao.txt ]; then
+
             anterior=$(cat data/ultima-cotacao.txt)
 
             variacao=$(awk -v atual="$cotacao" -v anterior="$anterior" \
@@ -41,56 +42,38 @@ jobs:
             echo "Cotacao anterior: $anterior ARS/BRL"
             echo "Variacao: $variacao%"
 
-            if awk -v variacao="$variacao" 'BEGIN { exit !(variacao >= 2) }'; then
+            if awk -v v="$variacao" 'BEGIN { exit !(v >= 2) }'; then
 
-              echo "Cotacao subiu 2% ou mais!"
+              echo "A cotacao subiu 2% ou mais!"
 
-              mensagem="🚨 AstroPay
-
-A cotacao SUBIU 2% ou mais!
-
-R$ 1,00 = $cotacao ARS
-
-Variacao: +${variacao}%
-Anterior: ${anterior}
-Atual: ${cotacao}"
+              mensagem="AstroPay - COTACAO SUBIU | R$ 1,00 = ${cotacao} ARS | Variacao: +${variacao}% | Anterior: ${anterior} | Atual: ${cotacao}"
 
               curl -s -X POST \
                 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n \
-                  --arg chat_id "$TELEGRAM_CHAT_ID" \
-                  --arg text "$mensagem" \
-                  '{chat_id: $chat_id, text: $text}')"
+                --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+                --data-urlencode "text=${mensagem}"
 
-            elif awk -v variacao="$variacao" 'BEGIN { exit !(variacao <= -2) }'; then
+            elif awk -v v="$variacao" 'BEGIN { exit !(v <= -2) }'; then
 
-              echo "Cotacao caiu 2% ou mais!"
+              echo "A cotacao caiu 2% ou mais!"
 
-              mensagem="🚨 AstroPay
-
-A cotacao CAIU 2% ou mais!
-
-R$ 1,00 = $cotacao ARS
-
-Variacao: ${variacao}%
-Anterior: ${anterior}
-Atual: ${cotacao}"
+              mensagem="AstroPay - COTACAO CAIU | R$ 1,00 = ${cotacao} ARS | Variacao: ${variacao}% | Anterior: ${anterior} | Atual: ${cotacao}"
 
               curl -s -X POST \
                 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n \
-                  --arg chat_id "$TELEGRAM_CHAT_ID" \
-                  --arg text "$mensagem" \
-                  '{chat_id: $chat_id, text: $text}')"
+                --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+                --data-urlencode "text=${mensagem}"
 
             else
+
               echo "A cotacao nao variou 2%."
+
             fi
 
           else
+
             echo "Primeira execucao. Ainda nao existe cotacao anterior."
+
           fi
 
           echo "$cotacao" > data/ultima-cotacao.txt
