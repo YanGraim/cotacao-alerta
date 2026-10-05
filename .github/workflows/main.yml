@@ -1,0 +1,13 @@
+name: Monitorar AstroPay
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Teste
+        run: echo "Monitoramento executado!"
