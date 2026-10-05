@@ -12,24 +12,23 @@ jobs:
   monitorar:
     runs-on: ubuntu-latest
 
-    env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
     steps:
-      - name: Baixar repositório
+      - name: Baixar repositorio
         uses: actions/checkout@v4
 
       - name: Consultar AstroPay
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           resposta=$(curl -s -X POST \
-            https://partners-api.astropay.com/v1/public/exchanges \
+            "https://partners-api.astropay.com/v1/public/exchanges" \
             -H "Content-Type: application/json" \
             -d '{"from":"BRL","to":"ARS"}')
 
           cotacao=$(echo "$resposta" | jq -r '.exchange')
 
-          echo "Cotação atual: $cotacao ARS/BRL"
+          echo "Cotacao atual: $cotacao ARS/BRL"
 
           mkdir -p data
 
@@ -39,20 +38,22 @@ jobs:
             variacao=$(awk -v atual="$cotacao" -v anterior="$anterior" \
               'BEGIN { printf "%.2f", ((atual - anterior) / anterior) * 100 }')
 
-            echo "Cotação anterior: $anterior ARS/BRL"
-            echo "Variação: $variacao%"
+            echo "Cotacao anterior: $anterior ARS/BRL"
+            echo "Variacao: $variacao%"
 
             if awk -v variacao="$variacao" 'BEGIN { exit !(variacao >= 2) }'; then
-              echo "🚨 A cotação SUBIU 2% ou mais!"
 
-              mensagem="🚨 AstroPay - COTAÇÃO SUBIU
+              echo "Cotacao subiu 2% ou mais!"
 
-🇧🇷 R$ 1,00
-🇦🇷 $cotacao ARS
+              mensagem="🚨 AstroPay
 
-📈 Variação: +${variacao}%
-💱 Anterior: ${anterior}
-💱 Atual: ${cotacao}"
+A cotacao SUBIU 2% ou mais!
+
+R$ 1,00 = $cotacao ARS
+
+Variacao: +${variacao}%
+Anterior: ${anterior}
+Atual: ${cotacao}"
 
               curl -s -X POST \
                 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -63,16 +64,18 @@ jobs:
                   '{chat_id: $chat_id, text: $text}')"
 
             elif awk -v variacao="$variacao" 'BEGIN { exit !(variacao <= -2) }'; then
-              echo "🚨 A cotação CAIU 2% ou mais!"
 
-              mensagem="🚨 AstroPay - COTAÇÃO CAIU
+              echo "Cotacao caiu 2% ou mais!"
 
-🇧🇷 R$ 1,00
-🇦🇷 $cotacao ARS
+              mensagem="🚨 AstroPay
 
-📉 Variação: ${variacao}%
-💱 Anterior: ${anterior}
-💱 Atual: ${cotacao}"
+A cotacao CAIU 2% ou mais!
+
+R$ 1,00 = $cotacao ARS
+
+Variacao: ${variacao}%
+Anterior: ${anterior}
+Atual: ${cotacao}"
 
               curl -s -X POST \
                 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -83,16 +86,16 @@ jobs:
                   '{chat_id: $chat_id, text: $text}')"
 
             else
-              echo "A cotação não variou 2%."
+              echo "A cotacao nao variou 2%."
             fi
 
           else
-            echo "Primeira execução. Ainda não existe cotação anterior."
+            echo "Primeira execucao. Ainda nao existe cotacao anterior."
           fi
 
           echo "$cotacao" > data/ultima-cotacao.txt
 
-      - name: Salvar cotação
+      - name: Salvar cotacao
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -100,8 +103,8 @@ jobs:
           git add data/ultima-cotacao.txt
 
           if git diff --cached --quiet; then
-            echo "Nenhuma alteração para salvar."
+            echo "Nenhuma alteracao para salvar."
           else
-            git commit -m "Atualizar cotação AstroPay"
+            git commit -m "Atualizar cotacao AstroPay"
             git push
           fi
