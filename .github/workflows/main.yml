@@ -6,11 +6,17 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   monitorar:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
       - name: Consultar AstroPay
         run: |
           resposta=$(curl -s -X POST \
@@ -21,3 +27,34 @@ jobs:
           cotacao=$(echo "$resposta" | jq -r '.exchange')
 
           echo "Cotação atual: $cotacao ARS/BRL"
+
+          mkdir -p data
+
+          if [ -f data/ultima-cotacao.txt ]; then
+            anterior=$(cat data/ultima-cotacao.txt)
+
+            variacao=$(awk -v atual="$cotacao" -v anterior="$anterior" \
+              'BEGIN { printf "%.2f", ((atual - anterior) / anterior) * 100 }')
+
+            echo "Cotação anterior: $anterior ARS/BRL"
+            echo "Variação: $variacao%"
+
+          else
+            echo "Primeira execução. Ainda não existe cotação anterior."
+          fi
+
+          echo "$cotacao" > data/ultima-cotacao.txt
+
+      - name: Salvar cotação
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/ultima-cotacao.txt
+
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração para salvar."
+          else
+            git commit -m "Atualizar cotação AstroPay"
+            git push
+          fi
