@@ -41,8 +41,44 @@ jobs:
 
             if awk -v variacao="$variacao" 'BEGIN { exit !(variacao >= 2) }'; then
               echo "🚨 A cotação SUBIU 2% ou mais!"
+
+              mensagem="🚨 AstroPay - COTAÇÃO SUBIU
+
+🇧🇷 R$ 1,00
+🇦🇷 $ ${cotacao}
+
+📈 Variação: +${variacao}%
+💱 Anterior: ${anterior}
+💱 Atual: ${cotacao}"
+
+              curl -s -X POST \
+                "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n \
+                  --arg chat_id "${{ secrets.TELEGRAM_CHAT_ID }}" \
+                  --arg text "$mensagem" \
+                  '{chat_id: $chat_id, text: $text}')"
+
             elif awk -v variacao="$variacao" 'BEGIN { exit !(variacao <= -2) }'; then
               echo "🚨 A cotação CAIU 2% ou mais!"
+
+              mensagem="🚨 AstroPay - COTAÇÃO CAIU
+
+🇧🇷 R$ 1,00
+🇦🇷 $ ${cotacao}
+
+📉 Variação: ${variacao}%
+💱 Anterior: ${anterior}
+💱 Atual: ${cotacao}"
+
+              curl -s -X POST \
+                "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n \
+                  --arg chat_id "${{ secrets.TELEGRAM_CHAT_ID }}" \
+                  --arg text "$mensagem" \
+                  '{chat_id: $chat_id, text: $text}')"
+
             else
               echo "A cotação não variou 2%."
             fi
