@@ -11,5 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Teste
-        run: echo "Monitoramento executado!"
+      - name: Consultar AstroPay
+        run: |
+          resposta=$(curl -s -X POST \
+            https://partners-api.astropay.com/v1/public/exchanges \
+            -H "Content-Type: application/json" \
+            -d '{"from":"BRL","to":"ARS"}')
+
+          echo "Resposta da AstroPay:"
+          echo "$resposta"
